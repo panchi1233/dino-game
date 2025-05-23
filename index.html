@@ -1,0 +1,163 @@
+!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dino Chrome Replica</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #f7f7f7;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      background-color: #fff;
+      display: block;
+      margin: 0 auto;
+      border: 1px solid #ccc;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #555;
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: 0</div>
+  <canvas id="gameCanvas" width="800" height="200"></canvas>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreDisplay = document.getElementById('score');
+
+    const dino = {
+      x: 50,
+      y: 150,
+      width: 40,
+      height: 40,
+      yVelocity: 0,
+      jumpStrength: 12,
+      gravity: 0.6,
+      isJumping: false
+    };
+
+    const cactusWidth = 20;
+    const cactusHeight = 40;
+    let cactusX = canvas.width;
+    let cactusSpeed = 6;
+
+    let score = 0;
+    let gameOver = false;
+    let askingQuestion = false;
+
+    function resetGame() {
+      cactusX = canvas.width;
+      score = 0;
+      dino.y = 150;
+      dino.yVelocity = 0;
+      dino.isJumping = false;
+      cactusSpeed = 6;
+      gameOver = false;
+      askingQuestion = false;
+    }
+
+    function drawDino() {
+      ctx.fillStyle = '#555';
+      ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
+    }
+
+    function drawCactus() {
+      ctx.fillStyle = '#0a0';
+      ctx.fillRect(cactusX, canvas.height - cactusHeight - 10, cactusWidth, cactusHeight);
+    }
+
+    function update() {
+      if (gameOver) {
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "red";
+        ctx.fillText("¡Juego terminado! Presiona Enter para reiniciar", 100, 100);
+        return;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Dino physics
+      if (dino.isJumping) {
+        dino.yVelocity -= dino.gravity;
+        dino.y -= dino.yVelocity;
+        if (dino.y >= 150) {
+          dino.y = 150;
+          dino.isJumping = false;
+          dino.yVelocity = 0;
+        }
+      }
+
+      // Move cactus
+      cactusX -= cactusSpeed;
+      if (cactusX + cactusWidth < 0) {
+        cactusX = canvas.width;
+        score++;
+        scoreDisplay.textContent = 'Score: ' + score;
+
+        // Increment speed slowly
+        if (score % 100 === 0) {
+          cactusSpeed += 0.5;
+        }
+
+        // Preguntar si score llega a 1000
+        if (score === 1000 && !askingQuestion) {
+          askingQuestion = true;
+          let answer = prompt("¿Cuánto es 2 + 2?");
+          if (answer === "4") {
+            alert("¡Correcto! Puedes seguir jugando.");
+          } else {
+            alert("Respuesta incorrecta. El juego se reiniciará.");
+            resetGame();
+          }
+        }
+      }
+
+      // Check collision
+      if (
+        dino.x < cactusX + cactusWidth &&
+        dino.x + dino.width > cactusX &&
+        dino.y + dino.height > canvas.height - cactusHeight - 10
+      ) {
+        gameOver = true;
+      }
+
+      drawDino();
+      drawCactus();
+
+      if (!gameOver) {
+        requestAnimationFrame(update);
+      } else {
+        scoreDisplay.textContent = "Score: " + score;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (!dino.isJumping && !gameOver) {
+          dino.isJumping = true;
+          dino.yVelocity = dino.jumpStrength;
+        }
+      }
+      if (gameOver && e.code === 'Enter') {
+        resetGame();
+        update();
+      }
+    });
+
+    // Inicio del juego
+    update();
+  </script>
+</body>
+</html>
